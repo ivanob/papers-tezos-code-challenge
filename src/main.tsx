@@ -1,9 +1,12 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import TableTezosTxns from "./App";
+import { ChakraProvider } from "@chakra-ui/react";
+import TezosDashboard from "./TezosDashboard";
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
-    <TableTezosTxns/>
+    <ChakraProvider>
+        <TezosDashboard/>
+    </ChakraProvider>
   </React.StrictMode>
 );
