@@ -12,102 +12,44 @@ import { useEffect, useState } from "react";
 import TableTezosTxns from "./TableTezosTxns";
 import "./TezosDashboard.css";
 import { TezosBlock } from "./types";
-import axios from 'axios';
-
-const initializeData = (): TezosBlock[] => {
-  return [
-    {
-      blockLevel: 1,
-      proposer: "abc",
-      timestamp: "2023-05-05T16:32:36Z",
-      numTnxsBlock: 5,
-    },
-    {
-      blockLevel: 2,
-      proposer: "abc",
-      timestamp: "2023-05-05T16:32:36Z",
-      numTnxsBlock: 5,
-    },
-    {
-      blockLevel: 3,
-      proposer: "abc",
-      timestamp: "2023-05-05T16:32:36Z",
-      numTnxsBlock: 5,
-    },
-    {
-      blockLevel: 4,
-      proposer: "abc",
-      timestamp: "2023-05-05T16:32:36Z",
-      numTnxsBlock: 5,
-    },
-    {
-      blockLevel: 5,
-      proposer: "abc",
-      timestamp: "2023-05-05T16:32:36Z",
-      numTnxsBlock: 5,
-    },
-    {
-      blockLevel: 6,
-      proposer: "abc",
-      timestamp: "2023-05-05T16:32:36Z",
-      numTnxsBlock: 5,
-    },
-    {
-      blockLevel: 7,
-      proposer: "abc",
-      timestamp: "2023-05-05T16:32:36Z",
-      numTnxsBlock: 5,
-    },
-    {
-      blockLevel: 8,
-      proposer: "abc",
-      timestamp: "2023-05-05T16:32:36Z",
-      numTnxsBlock: 5,
-    },
-    {
-      blockLevel: 9,
-      proposer: "abc",
-      timestamp: "2023-05-05T16:32:36Z",
-      numTnxsBlock: 5,
-    },
-    {
-      blockLevel: 10,
-      proposer: "abc",
-      timestamp: "2023-05-05T16:32:36Z",
-      numTnxsBlock: 5,
-    },
-  ];
-};
-
-const getNumBlocks = async (setNumBlocks: any): Promise<void> => {
-  const num = await axios.get('https://api.tzkt.io/v1/blocks/count')
-  setNumBlocks(num.data)
-};
+import { fetchNumTezosBlocks, fetchTezosBlocks } from "./requests";
 
 const movePageBackwards = (currentPage: number, setCurrentPage: any) => () => {
   console.log('DOWN')
   setCurrentPage(currentPage+1)
+  // loadData(numBlocks-currentPage*MAX_NUMBER_ELEMENTS_PER_PAGE)
 }
 
 const movePageForwards = (currentPage: number, setCurrentPage: any) => () => {
   console.log('UP')
   setCurrentPage(currentPage-1)
+  // loadData(numBlocks-currentPage*MAX_NUMBER_ELEMENTS_PER_PAGE)
 }
 
 function TezosDashboard() {
   const MAX_NUMBER_ELEMENTS_PER_PAGE = 10;
-  const [blocks] = useState<TezosBlock[]>(initializeData());
   const [numBlocks, setNumBlocks] = useState<number>(0);
+  const [blocks, setBlocks] = useState<TezosBlock[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(0);
   // const [count, setCount] = useState(0)
-  useEffect(() => {
-    // Fetch data from API or any other source
-    // fetch("https://example.com/data")
-    //   .then((response) => response.json())
-    //   .then((data) => setData(data))
-    //   .catch((error) => console.log(error));
+  useEffect(() => { //ComponentDidMount
     console.log("load data");
-    getNumBlocks(setNumBlocks);
+    fetchNumTezosBlocks().then((response1) => {
+      setNumBlocks(response1.data)
+      console.log(response1.data)
+      fetchTezosBlocks(response1.data - currentPage*MAX_NUMBER_ELEMENTS_PER_PAGE).then((response) => {
+        const blocksFetched: TezosBlock[] = response.data.map((b: any) => ({
+          blockLevel: b.level,
+          timestamp: b.timestamp,
+          proposer: b.proposer?.alias,
+          numTnxsBlock: 0,
+          hash: b.hash
+        }));
+        console.log(blocksFetched)
+        setBlocks(blocksFetched);
+      })
+      .catch((error) => console.error(error));
+    })
   }, []);
 
   return (
@@ -122,7 +64,7 @@ function TezosDashboard() {
         <GridItem
           rowSpan={2}
           colSpan={3}
-          h={20 + 35 * MAX_NUMBER_ELEMENTS_PER_PAGE}
+          h={50 + 35 * MAX_NUMBER_ELEMENTS_PER_PAGE}
         >
           <TableTezosTxns data={blocks} />
         </GridItem>
