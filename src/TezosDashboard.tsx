@@ -12,45 +12,60 @@ import { useEffect, useState } from "react";
 import TableTezosTxns from "./TableTezosTxns";
 import "./TezosDashboard.css";
 import { TezosBlock } from "./types";
-import { fetchNumTezosBlocks, fetchTezosBlocks } from "./requests";
+import {
+  fetchNumTezosBlocks,
+  fetchTezosBlocks,
+  getNumTxnsInBlock,
+} from "./requests";
 
 const movePageBackwards = (currentPage: number, setCurrentPage: any) => () => {
-  console.log('DOWN')
-  setCurrentPage(currentPage+1)
-  // loadData(numBlocks-currentPage*MAX_NUMBER_ELEMENTS_PER_PAGE)
-}
+  console.log("PageDOWN");
+  setCurrentPage(currentPage + 1);
+};
 
 const movePageForwards = (currentPage: number, setCurrentPage: any) => () => {
-  console.log('UP')
-  setCurrentPage(currentPage-1)
-  // loadData(numBlocks-currentPage*MAX_NUMBER_ELEMENTS_PER_PAGE)
-}
+  console.log("PageUP");
+  setCurrentPage(currentPage - 1);
+};
 
 function TezosDashboard() {
   const MAX_NUMBER_ELEMENTS_PER_PAGE = 10;
   const [numBlocks, setNumBlocks] = useState<number>(0);
   const [blocks, setBlocks] = useState<TezosBlock[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(0);
-  // const [count, setCount] = useState(0)
-  useEffect(() => { //ComponentDidMount
-    console.log("load data");
+  useEffect(() => {
+    //ComponentDidMount
+    console.log("fetching data");
     fetchNumTezosBlocks().then((response1) => {
-      setNumBlocks(response1.data)
-      console.log(response1.data)
-      fetchTezosBlocks(response1.data - currentPage*MAX_NUMBER_ELEMENTS_PER_PAGE).then((response) => {
-        const blocksFetched: TezosBlock[] = response.data.map((b: any) => ({
-          blockLevel: b.level,
-          timestamp: b.timestamp,
-          proposer: b.proposer?.alias,
-          numTnxsBlock: 0,
-          hash: b.hash
-        }));
-        console.log(blocksFetched)
-        setBlocks(blocksFetched);
-      })
-      .catch((error) => console.error(error));
-    })
-  }, []);
+      setNumBlocks(response1.data-1);
+      fetchTezosBlocks(
+        response1.data - 1 - currentPage * MAX_NUMBER_ELEMENTS_PER_PAGE
+      )
+        .then((response) => {
+          const blocksFetched: TezosBlock[] = response.data.map((b: any) => ({
+            blockLevel: b.level,
+            timestamp: b.timestamp,
+            proposer: b.proposer?.alias,
+            numTnxsBlock: 0,
+            hash: b.hash,
+          }));
+          const promises = blocksFetched.map(async (block: TezosBlock) => {
+            return getNumTxnsInBlock(block.blockLevel);
+          });
+          Promise.allSettled(promises).then((settled) => {
+            Promise.allSettled(
+              settled.map((s: any, i) => {
+                blocksFetched[i].numTnxsBlock = s.value.data;
+              })
+            ).then((s) => {
+              console.log(blocksFetched)
+              setBlocks(blocksFetched);
+            });
+          });
+        })
+        .catch((error) => console.error(error));
+    });
+  }, [currentPage]);
 
   return (
     <>
@@ -69,7 +84,13 @@ function TezosDashboard() {
           <TableTezosTxns data={blocks} />
         </GridItem>
         <GridItem w="100%" h="10">
-          <Text>{`Showing ${(numBlocks-blocks.length)-MAX_NUMBER_ELEMENTS_PER_PAGE*currentPage} to ${numBlocks-MAX_NUMBER_ELEMENTS_PER_PAGE*currentPage} of ${numBlocks} results (current page: ${currentPage})`}</Text>
+          <Text>{`Showing ${
+            numBlocks -
+            blocks.length -
+            MAX_NUMBER_ELEMENTS_PER_PAGE * currentPage
+          } to ${
+            numBlocks - MAX_NUMBER_ELEMENTS_PER_PAGE * currentPage
+          } of ${numBlocks} results (current page: ${currentPage})`}</Text>
         </GridItem>
         <Spacer />
         <GridItem w="100%" h="10">
@@ -86,7 +107,7 @@ function TezosDashboard() {
               size="sm"
               // eslint-disable-next-line @typescript-eslint/no-empty-function
               onClick={movePageForwards(currentPage, setCurrentPage)}
-              isDisabled={currentPage===0}
+              isDisabled={currentPage === 0}
             >
               Next
             </Button>
