@@ -71,7 +71,7 @@ function TezosDashboard() {
                 blocksFetched[i].numTnxsBlock = s.value.data;
               })
             ).then((s) => {
-              console.log(blocksFetched)
+              console.log(s)
               setBlocks(blocksFetched);
             });
           });
