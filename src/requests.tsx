@@ -28,10 +28,24 @@ export async function fetchNumTezosBlocks(): Promise<AxiosResponse<any>> {
   }
 }
 
-export async function getNumTxnsInBlock(level: number): Promise<AxiosResponse<any>> {
+export async function getNumTxnsInBlock(
+  level: number
+): Promise<AxiosResponse<any>> {
+  try {
+    const response: AxiosResponse = await axios.get(
+      `https://api.tzkt.io/v1/operations/transactions/count?level=${level}`
+    );
+    return response;
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+}
+
+export async function getTxnsInBlock(level: number): Promise<AxiosResponse<any>> {
     try {
       const response: AxiosResponse = await axios.get(
-        `https://api.tzkt.io/v1/operations/transactions/count?level=${level}`
+        `https://api.tzkt.io/v1/operations/transactions?level=${level}`
       );
       return response;
     } catch (error) {

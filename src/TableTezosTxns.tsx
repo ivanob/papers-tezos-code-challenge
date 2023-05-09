@@ -6,14 +6,13 @@ import {
   Thead,
   Tbody,
   Td,
-  Checkbox,
+  Box
 } from "@chakra-ui/react";
 import { TezosBlock } from "./types";
 
-function TableTezosTxns(props: { data: TezosBlock[] }) {
-  // const [count, setCount] = useState(0)
-
+function TableTezosTxns(props: { data: TezosBlock[], onOpen: any }) {
   return (
+    <>
     <TableContainer>
       <Table size="sm" variant="striped" className="table-meetings">
         <Thead>
@@ -27,17 +26,18 @@ function TableTezosTxns(props: { data: TezosBlock[] }) {
         <Tbody>
           {props.data.map((b: TezosBlock, i: number) => {
             return (
-              <Tr key={i}>
+              <Box as="tr" key={i} onClick={() => props.onOpen(b.blockLevel)} cursor="pointer">
                 <Td>{b.blockLevel}</Td>
-                <Td>{b.proposer}</Td>
+                <Td>{b.proposer.alias} ({b.proposer.address})</Td>
                 <Td>{b.timestamp}</Td>
                 <Td>{b.numTnxsBlock}</Td>
-              </Tr>
+              </Box>
             );
           })}
         </Tbody>
       </Table>
     </TableContainer>
+    </>
   );
 }
 

@@ -7,6 +7,7 @@ import {
   Spacer,
   ButtonGroup,
   Text,
+  useDisclosure
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import TableTezosTxns from "./TableTezosTxns";
@@ -17,6 +18,7 @@ import {
   fetchTezosBlocks,
   getNumTxnsInBlock,
 } from "./requests";
+import TxnsModal from "./TxnsModal";
 
 const movePageBackwards = (currentPage: number, setCurrentPage: any) => () => {
   console.log("PageDOWN");
@@ -33,6 +35,14 @@ function TezosDashboard() {
   const [numBlocks, setNumBlocks] = useState<number>(0);
   const [blocks, setBlocks] = useState<TezosBlock[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(0);
+  const [selectedBlock, setSelectedBlock] = useState(0);
+  const { onOpen, isOpen, onClose } = useDisclosure();
+
+  const onOpenModal = (blockLevel: number) => {
+    setSelectedBlock(blockLevel)
+    onOpen();
+  }
+
   useEffect(() => {
     //ComponentDidMount
     console.log("fetching data");
@@ -45,7 +55,10 @@ function TezosDashboard() {
           const blocksFetched: TezosBlock[] = response.data.map((b: any) => ({
             blockLevel: b.level,
             timestamp: b.timestamp,
-            proposer: b.proposer?.alias,
+            proposer: {
+              alias: b.proposer?.alias,
+              address: b.proposer?.address
+            },
             numTnxsBlock: 0,
             hash: b.hash,
           }));
@@ -69,11 +82,13 @@ function TezosDashboard() {
 
   return (
     <>
+      <TxnsModal isOpen={isOpen} onClose={onClose} blockLevel={selectedBlock}/>
       <Grid templateColumns="repeat(3, 1fr)" gap={3} id="main">
         <GridItem rowSpan={2} colSpan={3} margin={"0px"}>
           <Heading as="h4" size="md">
-            Tezos Blocks
+            Tezos Blocks Viewer
           </Heading>
+            Blocks in the table are clickable
         </GridItem>
 
         <GridItem
@@ -81,7 +96,7 @@ function TezosDashboard() {
           colSpan={3}
           h={50 + 35 * MAX_NUMBER_ELEMENTS_PER_PAGE}
         >
-          <TableTezosTxns data={blocks} />
+          <TableTezosTxns data={blocks} onOpen={onOpenModal} />
         </GridItem>
         <GridItem w="100%" h="10">
           <Text>{`Showing ${
